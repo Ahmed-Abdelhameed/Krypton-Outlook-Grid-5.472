@@ -128,6 +128,11 @@ namespace KryptonOutlookGrid.Classes
         /// </summary>
         public event EventHandler<CollapsedEventArgs> NodeCollapsed;
 
+        /// <summary>
+        /// Replaces the DataGridView.SortCompare event.
+        /// </summary>
+        public new event EventHandler<OutlookGridSortCompareEventArgs> SortCompare;
+
         float factorX, factorY;
 
         #region OutlookGrid constructor
@@ -1432,6 +1437,24 @@ namespace KryptonOutlookGrid.Classes
             }
         }
 
+        internal bool OnSortCompare(OutlookGridColumn column, object value1, object value2,
+                                    OutlookGridRow row1, OutlookGridRow row2, out int sortResult)
+        {
+            var args = new OutlookGridSortCompareEventArgs(column, value1, value2, row1, row2);
+            OnSortCompare(args);
+            sortResult = args.SortResult;
+            return args.Handled;
+        }
+
+        /// <summary>
+        /// Raises the `new` SortCompare event.
+        /// </summary>
+        /// <param name="e">An OutlookGridSortCompareEventArgs containing the sort-compare data.</param>
+        protected virtual void OnSortCompare(OutlookGridSortCompareEventArgs e)
+        {
+            SortCompare?.Invoke(this, e);
+        }
+
         #endregion
 
         #region OutlookGrid methods
@@ -2617,7 +2640,7 @@ namespace KryptonOutlookGrid.Classes
                 //Applying sort
                 //try
                 //{
-                list.Sort(new OutlookGridRowComparer2(internalColumns.GetIndexAndSortSortedOnlyColumns()));
+                list.Sort(new OutlookGridRowComparer2(this, internalColumns.GetSortedOnlyColumns()));
                 //}
                 //catch (Exception e)
                 //{
@@ -2738,9 +2761,9 @@ namespace KryptonOutlookGrid.Classes
                 //RecursiveSort(this.groupCollection, index, (index == -1) ? SortOrder.None : internalColumns.FindFromColumnIndex(index).SortDirection);
                 List<Tuple<int, SortOrder, IComparer>> sortList = internalColumns.GetIndexAndSortSortedOnlyColumns();
                 if (sortList.Count > 0)
-                    RecursiveSort(groupCollection, sortList);
+                    RecursiveSort(groupCollection, internalColumns.GetSortedOnlyColumns());
                 else
-                    RecursiveSort(groupCollection, internalColumns.GetIndexAndSortGroupedColumns());
+                    RecursiveSort(groupCollection, internalColumns.GetGroupedColumns());
                 //}
                 //catch (Exception e)
                 //{
@@ -2769,8 +2792,8 @@ namespace KryptonOutlookGrid.Classes
         /// Sort recursively the OutlookGridRows within groups
         /// </summary>
         /// <param name="groupCollection">The OutlookGridGroupCollection.</param>
-        /// <param name="sortList">The list of sorted columns</param>
-        private void RecursiveSort(OutlookGridGroupCollection groupCollection, List<Tuple<int, SortOrder, IComparer>> sortList)
+        /// <param name="sortedColumnsList">The list of sorted columns</param>
+        private void RecursiveSort(OutlookGridGroupCollection groupCollection, List<OutlookGridColumn> sortedColumnsList)
         {
             //We sort the groups
             if (groupCollection.Count > 0)
@@ -2785,10 +2808,10 @@ namespace KryptonOutlookGrid.Classes
             for (int i = 0; i < groupCollection.Count; i++)
             {
                 //If there is no child group then we have only rows...
-                if ((groupCollection[i].Children.Count == 0) && sortList.Count > 0)
+                if ((groupCollection[i].Children.Count == 0) && sortedColumnsList.Count > 0)
                 {
                     //We sort the rows according to the sorted only columns
-                    groupCollection[i].Rows.Sort(new OutlookGridRowComparer2(sortList));
+                    groupCollection[i].Rows.Sort(new OutlookGridRowComparer2(this, sortedColumnsList));
                 }
                 //else
                 //{
@@ -2798,7 +2821,7 @@ namespace KryptonOutlookGrid.Classes
                 //}
 
                 //Recursive call for children
-                RecursiveSort(groupCollection[i].Children, sortList);
+                RecursiveSort(groupCollection[i].Children, sortedColumnsList);
             }
         }
 

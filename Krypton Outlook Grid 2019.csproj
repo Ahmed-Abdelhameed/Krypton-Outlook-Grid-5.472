@@ -59,6 +59,7 @@
     <Compile Include="Classes\OutlookGridRowComparer2.cs" />
     <Compile Include="Classes\OutlookGridRowNodeCollection.cs" />
     <Compile Include="Classes\OutlookGridRowNodeEvents.cs" />
+    <Compile Include="Classes\OutlookGridSortCompareEventArgs.cs" />
     <Compile Include="Classes\StaticValues.cs" />
     <Compile Include="Controls\KryptonOutlookGridGroupBox.cs">
       <SubType>UserControl</SubType>
